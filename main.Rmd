@@ -29,20 +29,13 @@ library(scales)
 library(ggtext)
 library(colorspace)
 library(ggthemes)
-
 ###########################
 master_data <- read_excel("Arch_master_spreadsheet-2.xls")
-
 crosses_data <- read_excel("Arch_crosses_spreadsheet.xlsx")
-
 merged <- left_join(master_data, crosses_data)
 ###########################
-
-
-
 ###########################
 ### Renames existing columns and summarises the crosses columns
-
 # Renames columns
 merged <-
 merged %>%
@@ -59,98 +52,62 @@ merged %>%
     Picture_Link = Bildlänk,
     Cross_Num = '#'
   )
-
 # Summarises totals for cross types
 merged$Total_A <- merged$A1 + merged$A2 + merged$A3 + merged$A4 + merged$A5 + merged$A6 + merged$A7 + merged$A8 + merged$A9
 merged$Total_B <- merged$B1 + merged$B2 + merged$B3 + merged$B4
 merged$Total_C <- merged$C1 + merged$C2 + merged$C3 + merged$C4 + merged$C5 + merged$C6 + merged$C7 + merged$C8 + merged$C9 + merged$C10 + merged$C11
-
 ### TODO GOTTA ADD D
 merged$Total_D <- merged$D1 + merged$D2 + merged$D3 + merged$D4 + merged$D5 + merged$D6
-
 merged$Total_E <- merged$E1 + merged$E2 + merged$E3 + merged$E4 + merged$E5 + merged$E6 + merged$E7 + merged$E8 + merged$E9 + merged$E10 + merged$E11
 merged$Total_F <- merged$F1 + merged$F2 + merged$F3 + merged$F4
 merged$Total_G <- merged$G1 + merged$G2 + merged$G3 + merged$G4 + merged$G5 + merged$G6
 ###########################
-
-
-
 ###########################
 ### Code for carver data cleaning and Signed runestones
-
-
 # Filters out entries with no carver data
 merged <- filter(merged, !(merged$Carver == ('')))
-
 # Finds all entries in 'Carver' with '(A)'
 merged$Attributed <- str_match(merged$Carver, ".*\\(A\\)")
-
 # Finds all entries in 'Carver' with '(S)'
 merged$Signed <- str_match(merged$Carver, ".*\\(S\\)")
-
 # Regex for matching up to and including the first (S) only, filtering out most collabs
-
-
 ########TODO doing the below screws up the df -- try use grepl or an alternative method ........>############NOTE
 #merged$Signed <- str_match(merged$Signed, regex("^(.*?)\\(S\\)"))
-
 # Removes all NA data entries by the column Signed
 merged <- merged[complete.cases(merged$Signed), ]
-
 merged$Clean_styles <- str_match(merged$Style_Grouping, "^[^?]+")
 ###########################
-
-
-
 ###########################
 ### Code for cleaning coordinates and lat/long cols
-
 # Filters out entries with no coordinate data
 merged <- filter(merged, 
 !(merged$Coordinates == ('')))
-
 # read the right of the coordinates: (\d+.)$
 merged$long <- str_match(merged$Coordinates, regex("\\d+$"))
-
 # read the left of the coordinates: ^[^.]*
 merged$lat <- str_match(merged$Coordinates, regex("^\\d+"))
-
 # Filters out all NA and blank coord
 merged <- filter(merged, 
 !(merged$long == ('')))
-
 merged$lat <- as.numeric(merged$lat)/100000
 merged$long <- as.numeric(merged$long)/100000
 ###########################
-
-
-
 ###########################
 ### Code for ordering and extracting data about carvers and num of runestones
-
 # Adds a column containing the frequency of each occurance in signed called s_freq
 merged <- transform(merged, s_freq=ave(seq(nrow(merged)),Signed,FUN=length))
-
 #Sorts the table in descending order by s_freq
 merged <- arrange(merged, desc(s_freq))
-
 #Creates a temporary df with distinct values of Signed it's corresponding s_freq
 disc_signed_df <- distinct(merged, Signed, s_freq)
-
 #Extracts the top 5 unique carvers
 unique_sig <- disc_signed_df$Signed
 unique_sig <- unique_sig[1:5]
-
 #Extracts their corresponding number of runestones
 unique_freq <- disc_signed_df$s_freq
 unique_freq <- unique_freq[1:5]
 ###########################
-
-
-
 #merged[is.element(merged$Signed, unique_sig)]
-
-
 top_5_df <- merged[merged$Signed %in% unique_sig, ]
 ```
 
@@ -188,43 +145,15 @@ scale_colour_discrete_qualitative(l1 = 70) +
 scatter1
 ```
 
-```{r}
-#TODO fix scales
-#TODO consider lat or long on which axis
-scatter1 <- ggplot(top_5_df, aes(x = long, y = lat, colour = Signed)) + 
-  coord_equal() +
-  stat_density_2d(size = 0.2,
-                  linetype = 1,
-                  contour_var = "density",
-                  
-                  ) +
-  scale_x_continuous(name = "Longitude°E",
-                     n.breaks = ,
-                     limits= c(15,17) ) +
-  scale_y_continuous(name = "Latitude°N",
-                     n.breaks = ,
-                     limits=  c(65.5,67.5)) +
-  labs(
-       title = expression(bold("Figure 4")),
-       subtitle = expression(italic("Visualization of Density")),
-       fill = "Style Dating"
-       ) +
-scale_colour_discrete_qualitative(l1 = 70) +
-  theme_igray()
-scatter1
-```
-
-
-
 
 ## Time period + frequency 
-Style grouping legened
+Other
 RAK	990-1010 AD
-
 FP	1010-1050 AD
+Ringerike Style
 Pr1	1010-1040 AD
 Pr2	1020-1050 AD
-
+Urnes Style
 Pr3	1050 – 1070 AD
 Pr4	1060-1100 AD
 Pr5	1100-1130 AD
@@ -241,7 +170,6 @@ top_5_df$Clean_styles_ordered <- factor(top_5_df$Clean_styles,
                                                    "Pr4 - Pr5",
                                                    "Pr5"),
                                         exclude = NULL)
-
 bar1 <- (ggplot(top_5_df, 
                 aes(x = reorder(Signed, -s_freq), 
                     fill = Clean_styles_ordered)
@@ -264,12 +192,9 @@ bar1 <- (ggplot(top_5_df,
 #colouring the fill to a nice and logical colour
     scale_fill_discrete_divergingx(palette = "Earth", na.value = "black") +
   theme_igray()
-
   )
-
 #TODO add legend for time period of styles
 #TODO add a label for the total quanitity of each carver
-
 bar1
 ```
 
@@ -278,13 +203,11 @@ bar1
 ## Crosses
 ```{r}
 styles_vec = c("A", "B", "C", "D", "E")
-
 asmund_df <- filter(merged, Signed == "Åsmund (S)", !is.na(A1))
 balle_df <- filter(merged, Signed == "Balle (S)", !is.na(A1))
 fot_df <- filter(merged, Signed == "Fot 2 (S)", !is.na(A1))
 opir_df <- filter(merged, Signed == "Öpir 1 (S)", !is.na(A1))
 visate_df <- filter(merged, Signed == "Visäte (S)", !is.na(A1))
-
 total_crosses = 0
 total_crosses = sum(top_5_df$Total_A, 
                     top_5_df$Total_B, 
@@ -293,39 +216,43 @@ total_crosses = sum(top_5_df$Total_A,
                     top_5_df$Total_E,
                     top_5_df$Total_F,
                     na.rm = T)
-
-top_carvers <- c(rep("Åsmund", 5), rep("Balle", 5), rep("Fot", 5), rep("Öpir", 5), rep("Visäte", 5))
-
+top_carvers <- c(rep("Åsmund (S)", 5), rep("Balle (S)", 5), rep("Fot 2 (S)", 5), rep("Öpir (S)", 5), rep("Visäte (S)", 5))
 totals_Asmund <- c(sum(asmund_df$Total_A), sum(asmund_df$Total_B), sum(asmund_df$Total_C), sum(asmund_df$Total_D), sum(asmund_df$Total_E))
 totals_Balle <- c(sum(balle_df$Total_A), sum(balle_df$Total_B), sum(balle_df$Total_C), sum(balle_df$Total_D), sum(balle_df$Total_E))
 totals_Fot <- c(sum(fot_df$Total_A), sum(fot_df$Total_B), sum(fot_df$Total_C), sum(fot_df$Total_D), sum(fot_df$Total_E))
 totals_Opir <- c(sum(opir_df$Total_A), sum(opir_df$Total_B), sum(opir_df$Total_C), sum(opir_df$Total_D), sum(opir_df$Total_E))
 totals_Visate <- c(sum(visate_df$Total_A), sum(visate_df$Total_B), sum(visate_df$Total_C), sum(visate_df$Total_D), sum(visate_df$Total_E))
 
+#
 totals <- c(totals_Asmund, totals_Balle, totals_Fot, totals_Opir, totals_Visate)
-
 types <- rep(c("A", "B", "C", "D", "E"))
-
 data <- data.frame(top_carvers, totals, types)
-
-graph <- ggplot(data, aes(y=totals, x=top_carvers, fill=types)) +
-  geom_bar(position="stack", stat = "identity") + 
-  labs(x = "Top Carvers", y = "Number of Cross Types", fill = "Cross Types")
-
+graph <- ggplot(data, aes(y=totals, x= reorder(top_carvers,-totals), fill=types)) +
+  geom_bar(position="stack", stat = "identity"
+           ) + 
+            labs(
+       title = expression(bold("Figure 2")),
+       subtitle = expression(italic("Frequency of crosstype typologies by carver")),
+       x = "Runestone Carver",
+       y = "Frequency of Crosses",
+       fill = "Cross Types"
+       ) +
+     annotate("text", x=1, y=129, label= sum(totals_Opir)) +
+    annotate("text", x=2, y=43, label= sum(totals_Asmund)) +
+    annotate("text", x=3, y=35, label= sum(totals_Balle)) +
+    annotate("text", x=4, y=32, label= sum(totals_Visate)) +
+    annotate("text", x=5, y=21, label= sum(totals_Fot)) +
+  scale_fill_discrete_divergingx(palette = "Geyser", na.value = "black") +
+    theme_igray()
 graph
 ```
-
 
 # Misc
 ```{r}
 styles_vec = c("A", "B", "C", "D", "E")
-
-
 # How to assign variables with a for loop
 for (i in c("A", "B", "C", "D", "E"))
 {
   assign(paste("var", i, sep=""), i) #replace the last i with what you want each var to be
 }
-
 ```
-
