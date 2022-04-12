@@ -18,6 +18,7 @@ install.packages("scales")
 install.packages("ggtext")
 install.packages("colorspace")
 install.packages("ggthemes")
+install.packages("unikn")
 ```
 
 # Main Processing
@@ -29,6 +30,7 @@ library(scales)
 library(ggtext)
 library(colorspace)
 library(ggthemes)
+library(unikn)
 ###########################
 master_data <- read_excel("Arch_master_spreadsheet-2.xls")
 crosses_data <- read_excel("Arch_crosses_spreadsheet.xlsx")
@@ -195,14 +197,16 @@ bar1 <- (ggplot(top_5_df,
   )
 #TODO add legend for time period of styles
 #TODO add a label for the total quanitity of each carver
+
 bar1
+
 ```
 
 
 
 ## Crosses
 ```{r}
-styles_vec = c("A", "B", "C", "D", "E")
+styles_vec = c("A", "B", "C", "D", "E", "F", "G")
 asmund_df <- filter(merged, Signed == "Åsmund (S)", !is.na(A1))
 balle_df <- filter(merged, Signed == "Balle (S)", !is.na(A1))
 fot_df <- filter(merged, Signed == "Fot 2 (S)", !is.na(A1))
@@ -215,17 +219,18 @@ total_crosses = sum(top_5_df$Total_A,
                     top_5_df$Total_D, 
                     top_5_df$Total_E,
                     top_5_df$Total_F,
+                    top_5_df$Total_G,
                     na.rm = T)
-top_carvers <- c(rep("Åsmund (S)", 5), rep("Balle (S)", 5), rep("Fot 2 (S)", 5), rep("Öpir (S)", 5), rep("Visäte (S)", 5))
-totals_Asmund <- c(sum(asmund_df$Total_A), sum(asmund_df$Total_B), sum(asmund_df$Total_C), sum(asmund_df$Total_D), sum(asmund_df$Total_E))
-totals_Balle <- c(sum(balle_df$Total_A), sum(balle_df$Total_B), sum(balle_df$Total_C), sum(balle_df$Total_D), sum(balle_df$Total_E))
-totals_Fot <- c(sum(fot_df$Total_A), sum(fot_df$Total_B), sum(fot_df$Total_C), sum(fot_df$Total_D), sum(fot_df$Total_E))
-totals_Opir <- c(sum(opir_df$Total_A), sum(opir_df$Total_B), sum(opir_df$Total_C), sum(opir_df$Total_D), sum(opir_df$Total_E))
-totals_Visate <- c(sum(visate_df$Total_A), sum(visate_df$Total_B), sum(visate_df$Total_C), sum(visate_df$Total_D), sum(visate_df$Total_E))
+top_carvers <- c(rep("Åsmund (S)", 7), rep("Balle (S)", 7), rep("Fot 2 (S)", 7), rep("Öpir (S)", 7), rep("Visäte (S)", 7))
+totals_Asmund <- c(sum(asmund_df$Total_A), sum(asmund_df$Total_B), sum(asmund_df$Total_C), sum(asmund_df$Total_D), sum(asmund_df$Total_E), sum(asmund_df$Total_F), sum(asmund_df$Total_G))
+totals_Balle <- c(sum(balle_df$Total_A), sum(balle_df$Total_B), sum(balle_df$Total_C), sum(balle_df$Total_D), sum(balle_df$Total_E), sum(balle_df$Total_F), sum(balle_df$Total_G))
+totals_Fot <- c(sum(fot_df$Total_A), sum(fot_df$Total_B), sum(fot_df$Total_C), sum(fot_df$Total_D), sum(fot_df$Total_E), sum(fot_df$Total_F), sum(fot_df$Total_G))
+totals_Opir <- c(sum(opir_df$Total_A), sum(opir_df$Total_B), sum(opir_df$Total_C), sum(opir_df$Total_D), sum(opir_df$Total_E), sum(opir_df$Total_F), sum(opir_df$Total_G))
+totals_Visate <- c(sum(visate_df$Total_A), sum(visate_df$Total_B), sum(visate_df$Total_C), sum(visate_df$Total_D), sum(visate_df$Total_E), sum(visate_df$Total_F), sum(visate_df$Total_G))
 
 #
 totals <- c(totals_Asmund, totals_Balle, totals_Fot, totals_Opir, totals_Visate)
-types <- rep(c("A", "B", "C", "D", "E"))
+types <- rep(c("A", "B", "C", "D", "E", "F", "G"), 5)
 data <- data.frame(top_carvers, totals, types)
 graph <- ggplot(data, aes(y=totals, x= reorder(top_carvers,-totals), fill=types)) +
   geom_bar(position="stack", stat = "identity"
@@ -237,22 +242,12 @@ graph <- ggplot(data, aes(y=totals, x= reorder(top_carvers,-totals), fill=types)
        y = "Frequency of Crosses",
        fill = "Cross Types"
        ) +
-     annotate("text", x=1, y=129, label= sum(totals_Opir)) +
-    annotate("text", x=2, y=43, label= sum(totals_Asmund)) +
-    annotate("text", x=3, y=35, label= sum(totals_Balle)) +
-    annotate("text", x=4, y=32, label= sum(totals_Visate)) +
-    annotate("text", x=5, y=21, label= sum(totals_Fot)) +
+     annotate("text", x=1, y=160, label= sum(totals_Opir)) +
+    annotate("text", x=2, y=52, label= sum(totals_Asmund)) +
+    annotate("text", x=3, y=46, label= sum(totals_Balle)) +
+    annotate("text", x=4, y=41, label= sum(totals_Visate)) +
+    annotate("text", x=5, y=26, label= sum(totals_Fot)) +
   scale_fill_discrete_divergingx(palette = "Geyser", na.value = "black") +
     theme_igray()
 graph
-```
-
-# Misc
-```{r}
-styles_vec = c("A", "B", "C", "D", "E")
-# How to assign variables with a for loop
-for (i in c("A", "B", "C", "D", "E"))
-{
-  assign(paste("var", i, sep=""), i) #replace the last i with what you want each var to be
-}
 ```
