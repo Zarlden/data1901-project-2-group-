@@ -1,0 +1,353 @@
+---
+title: "Runestone Carvers of 11th Century Sweden"
+author: "Group 1;SIDs: 480222202,520456398,520464588,520455519,520174676, 510476517"
+subtitle: "Project 2"
+date: "University of Sydney | DATA1901 | April 2022"
+output:
+  html_document:
+    fig_caption: yes
+    number_sections: yes
+    self_contained: yes
+    theme: flatly
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    code_folding: hide
+---
+
+<br>
+
+# Executive Summary {.unnumbered}
+
+Enter executive summary here
+
+<br>
+
+# Full Report {.unnumbered}
+
+<br>
+
+## Initial Data Analysis (IDA) {.unnumbered}
+
+
+Insert IDA here
+
+<br>
+
+```{r Required Packages, eval=FALSE, include=FALSE}
+install.packages("tidyverse")
+install.packages("readxl")
+install.packages("fuzzyjoin")
+install.packages("scales")
+install.packages("ggtext")
+install.packages("colorspace")
+install.packages("ggthemes")
+install.packages("unikn")
+install.packages("ggpmisc")
+install.packages("png")
+```
+
+```{r Loading Packages, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(readxl)
+library(fuzzyjoin)
+library(scales)
+library(ggtext)
+library(colorspace)
+library(ggthemes)
+library(unikn)
+library(ggpmisc)
+library(png)
+library(grid)
+```
+
+```{r Wrangling and Cleaning}
+
+#Merging Master and Cross Data
+master_data <- read_excel("Arch_master_spreadsheet-2.xls")
+crosses_data <- read_excel("Arch_crosses_spreadsheet.xlsx")
+merged <- left_join(master_data, crosses_data)
+# Renames existing columns and summarises the crosses columns
+merged <-
+merged %>%
+ rename(
+    Signature = Signum,
+    Found_Location = Plats,
+    Parish = Socken,
+    District = Härad,
+    Municipality = Kommun,
+    Coordinates = Koordinater,
+    Style_Grouping = Stilgruppering,
+    Carver = Ristare,
+    Material_Type = Materialtyp,
+    Picture_Link = Bildlänk,
+    Cross_Num = '#'
+  )
+# Summarises totals for cross types
+merged$Total_A <- merged$A1 + merged$A2 + merged$A3 + merged$A4 + merged$A5 + merged$A6 + merged$A7 + merged$A8 + merged$A9
+merged$Total_B <- merged$B1 + merged$B2 + merged$B3 + merged$B4
+merged$Total_C <- merged$C1 + merged$C2 + merged$C3 + merged$C4 + merged$C5 + merged$C6 + merged$C7 + merged$C8 + merged$C9 + merged$C10 + merged$C11
+merged$Total_D <- merged$D1 + merged$D2 + merged$D3 + merged$D4 + merged$D5 + merged$D6
+merged$Total_E <- merged$E1 + merged$E2 + merged$E3 + merged$E4 + merged$E5 + merged$E6 + merged$E7 + merged$E8 + merged$E9 + merged$E10 + merged$E11
+merged$Total_F <- merged$F1 + merged$F2 + merged$F3 + merged$F4
+merged$Total_G <- merged$G1 + merged$G2 + merged$G3 + merged$G4 + merged$G5 + merged$G6
+###########################
+###########################
+### Code for carver data cleaning and Signed runestones
+# Filters out entries with no carver data
+merged <- filter(merged, !(merged$Carver == ('')))
+# Finds all entries in 'Carver' with '(A)'
+merged$Attributed <- str_match(merged$Carver, ".*\\(A\\)")
+# Finds all entries in 'Carver' with '(S)'
+merged$Signed <- str_match(merged$Carver, ".*\\(S\\)")
+# Regex for matching up to and including the first (S) only, filtering out most collabs
+########TODO doing the below screws up the df -- try use grepl or an alternative method ........>############NOTE
+#merged$Signed <- str_match(merged$Signed, regex("^(.*?)\\(S\\)"))
+# Removes all NA data entries by the column Signed
+merged <- merged[complete.cases(merged$Signed), ]
+merged$Clean_styles <- str_match(merged$Style_Grouping, "^[^?]+")
+###########################
+###########################
+### Code for cleaning coordinates and lat/long cols
+# Filters out entries with no coordinate data
+merged <- filter(merged, 
+!(merged$Coordinates == ('')))
+# read the right of the coordinates: (\d+.)$
+merged$long <- str_match(merged$Coordinates, regex("\\d+$"))
+# read the left of the coordinates: ^[^.]*
+merged$lat <- str_match(merged$Coordinates, regex("^\\d+"))
+# Filters out all NA and blank coord
+merged <- filter(merged, 
+!(merged$long == ('')))
+merged$lat <- as.numeric(merged$lat)/100000
+merged$long <- as.numeric(merged$long)/100000
+###########################
+###########################
+### Code for ordering and extracting data about carvers and num of runestones
+# Adds a column containing the frequency of each occurance in signed called s_freq
+merged <- transform(merged, s_freq=ave(seq(nrow(merged)),Signed,FUN=length))
+#Sorts the table in descending order by s_freq
+merged <- arrange(merged, desc(s_freq))
+#Creates a temporary df with distinct values of Signed it's corresponding s_freq
+disc_signed_df <- distinct(merged, Signed, s_freq)
+#Extracts the top 5 unique carvers
+unique_sig <- disc_signed_df$Signed
+unique_sig <- unique_sig[1:5]
+#Extracts their corresponding number of runestones
+unique_freq <- disc_signed_df$s_freq
+unique_freq <- unique_freq[1:5]
+###########################
+#merged[is.element(merged$Signed, unique_sig)]
+top_5_df <- merged[merged$Signed %in% unique_sig, ]
+```
+
+<br>
+
+## Research Questions {.unnumbered}
+
+
+Of primary interest were the runestones carvers, with our research questions centred around the frequency, dating , style, and location in relation to these carvers. We chose to narrow down our analysis to the five carvers who had the most runestones 'signed' rather than 'attributed to' to be more certain of our inferences on these carvers.
+
+<br>
+
+### Question 1: Who had the most signed runestones and how does this interact with Gräslund's (2006) dating system? {.unnumbered}
+
+```{r Figure1 Code}
+# creating dating annotation
+dating_table <- data.frame(
+  Style = c("RAK",
+              "Fp",
+              "Pr1",
+              "Pr2",
+              "Pr3",
+              "Pr4",
+              "Pr5"),
+  Dating = c("990-1010 CE",
+             "1010-1050 CE",
+             "1010-1040 CE",
+             "1020-1050 CE",
+             "1050-1070 CE",
+             "1060-1100 CE",
+             "1100-1130 CE"))
+#ordering the legend according to time period
+top_5_df$Clean_styles_ordered <- factor(top_5_df$Clean_styles,
+                                        levels = c(NA,"RAK",
+                                                   "Fp",
+                                                   "Pr1",
+                                                   "Pr2",
+                                                   "Pr3",
+                                                   "Pr3 - Pr4",
+                                                   "Pr4",
+                                                   "Pr4 - Pr5",
+                                                   "Pr5"),
+                                        exclude = NULL)
+Figure1 <- (ggplot(top_5_df, 
+                aes(x = reorder(Signed, -s_freq), 
+                    fill = Clean_styles_ordered)
+                ) + 
+           geom_bar() +
+           
+  #labeling the plot
+           labs(
+       title = expression(bold("Figure 1")),
+       subtitle = expression(italic("Number of runestones signed by each carver filled with Gräslund's (2006) style dating.")),
+       x = "Runestone Carver",
+       y = "Runestones Signed",
+       fill = "Style"
+       ) +
+     annotate("text", x=1, y=47, label= "45") +
+    annotate("text", x=2, y=24, label= "22") +
+    annotate("text", x=3, y=18, label= "16") +
+    annotate("text", x=4, y=10, label= "8") +
+    annotate("text", x=5, y=9, label= "7") +
+    annotate(geom = "table",
+           x = 5.5,
+           y = 49,
+           label = list(dating_table)) +
+#colouring the fill to a nice and logical colour
+    scale_fill_discrete_divergingx(palette = "Earth", na.value = "black") +
+  theme_igray()
+  )
+#TODO add legend for time period of styles
+#TODO add a label for the total quanitity of each carver
+Figure1
+```
+
+blah blah 
+
+<br>
+
+### Question 2: What Cross Styles did the top carvers favour? {.unnumbered}
+
+```{r Figure2 Code}
+#preparing cross type image annotation for graph
+img <- readPNG("CrossTypologies.png")
+Cross_image <- rasterGrob(img, interpolate=TRUE)
+
+#preparing cross data for table
+styles_vec = c("A", "B", "C", "D", "E", "F", "G")
+asmund_df <- filter(merged, Signed == "Åsmund (S)", !is.na(A1))
+balle_df <- filter(merged, Signed == "Balle (S)", !is.na(A1))
+fot_df <- filter(merged, Signed == "Fot 2 (S)", !is.na(A1))
+opir_df <- filter(merged, Signed == "Öpir 1 (S)", !is.na(A1))
+visate_df <- filter(merged, Signed == "Visäte (S)", !is.na(A1))
+total_crosses = 0
+total_crosses = sum(top_5_df$Total_A, 
+                    top_5_df$Total_B, 
+                    top_5_df$Total_C, 
+                    top_5_df$Total_D, 
+                    top_5_df$Total_E,
+                    top_5_df$Total_F,
+                    top_5_df$Total_G,
+                    na.rm = T)
+top_carvers <- c(rep("Åsmund (S)", 7), rep("Balle (S)", 7), rep("Fot 2 (S)", 7), rep("Öpir (S)", 7), rep("Visäte (S)", 7))
+totals_Asmund <- c(sum(asmund_df$Total_A), sum(asmund_df$Total_B), sum(asmund_df$Total_C), sum(asmund_df$Total_D), sum(asmund_df$Total_E), sum(asmund_df$Total_F), sum(asmund_df$Total_G))
+totals_Balle <- c(sum(balle_df$Total_A), sum(balle_df$Total_B), sum(balle_df$Total_C), sum(balle_df$Total_D), sum(balle_df$Total_E), sum(balle_df$Total_F), sum(balle_df$Total_G))
+totals_Fot <- c(sum(fot_df$Total_A), sum(fot_df$Total_B), sum(fot_df$Total_C), sum(fot_df$Total_D), sum(fot_df$Total_E), sum(fot_df$Total_F), sum(fot_df$Total_G))
+totals_Opir <- c(sum(opir_df$Total_A), sum(opir_df$Total_B), sum(opir_df$Total_C), sum(opir_df$Total_D), sum(opir_df$Total_E), sum(opir_df$Total_F), sum(opir_df$Total_G))
+totals_Visate <- c(sum(visate_df$Total_A), sum(visate_df$Total_B), sum(visate_df$Total_C), sum(visate_df$Total_D), sum(visate_df$Total_E), sum(visate_df$Total_F), sum(visate_df$Total_G))
+
+#
+totals <- c(totals_Asmund, totals_Balle, totals_Fot, totals_Opir, totals_Visate)
+types <- rep(c("A", "B", "C", "D", "E", "F", "G"), 5)
+data <- data.frame(top_carvers, totals, types)
+Figure2 <- ggplot(data, aes(y=totals, x= reorder(top_carvers,-totals), fill=types)) +
+  geom_bar(position="stack", stat = "identity"
+           ) + 
+            labs(
+       title = expression(bold("Figure 2")),
+       subtitle = expression(italic("Frequency of cross typologies (Lager, 2002) by carver.")),
+       x = "Runestone Carver",
+       y = "Frequency of Crosses",
+       fill = "Cross Types"
+       ) +
+     annotate("text", x=1, y=160, label= sum(totals_Opir)) +
+    annotate("text", x=2, y=52, label= sum(totals_Asmund)) +
+    annotate("text", x=3, y=46, label= sum(totals_Visate)) +
+    annotate("text", x=4, y=41, label= sum(totals_Balle)) +
+    annotate("text", x=5, y=26, label= sum(totals_Fot)) +
+  annotation_custom(Cross_image, xmin=4, xmax=5.5, ymin= 50, ymax=170) +
+  scale_fill_discrete_divergingx(palette = "Geyser", na.value = "black") +
+    theme_igray()
+Figure2
+```
+
+blah blah 
+
+<br>
+
+### Question 3: Where were runestones located and how densely packed were they for each carver? {.unnumbered}
+
+```{r Figure3 Code}
+#TODO fix scales
+#TODO consider lat or long on which axis
+Figure3 <- ggplot(top_5_df, aes(x = long, y = lat, colour = Signed)) + 
+  geom_point() +
+  #makes the x and y axis 1:1 as they are coordinates
+  coord_equal() +
+  #labelling
+  scale_x_continuous(name = "Longitude°E",
+                     n.breaks = 5,
+                     limits= c(15,17) ) +
+  scale_y_continuous(name = "Latitude°N",
+                     n.breaks = 5,
+                     limits=  c(65.5,67.5)) +
+  labs(
+       title = expression(bold("Figure 3")),
+       subtitle = expression(italic("Runestone locations according to WGS84 coordinates")),
+       fill = "Style Dating"
+       ) +
+scale_colour_discrete_qualitative(l1 = 70) +
+  
+  #adding the density thing on top (can remove if want)
+  geom_density_2d(alpha= 0.2,linetype = 1,
+                  size = 0.8) +
+  theme_igray()
+Figure3
+```
+
+blah blah <br>
+
+## Related Articles {.unnumbered}
+
+blah blah
+
+<br>
+
+## References {.unnumbered}
+
+Gräslund, A. (2006). Dating the Swedish Viking-Age rune stones on stylistic grounds, in Stoklund, M. et al. (eds.), *Runes and their Secrets: Studies in Runology*. Museum Tusculanum Press (pp. 117-140).
+
+Lager, L. (2002). Den Synliga Tron: Runstenskors Som En Spegling Av Kristnandet I Sverige. *Occasional Papers in Archaeology*. Department of Archaeology and Ancient History, Uppsala University.
+
+Thoeming, A., (2016). Dealing with Data: Naïve Bayesian Classification and a Case Study from Viking Age Sweden. *International Journal of Student Research in Archaeology*, 1(1), 193-204.
+
+<br>
+
+## Acknowledgements {-}
+
+We met every thursday of Semester 1 2022 Weeks 2-8 on Zoom from 1pm-2pm.
+<br>
+
+### Specific Contributions {-}
+Damon:
+
+
+Eben:
+
+
+Ilana:
+
+
+Michael:
+
+
+Vince:
+
+
+Kevin:
+
+<br>
+
+### General Contributions {-}
+All members helped refine and discuss the general ideas around our research report.
