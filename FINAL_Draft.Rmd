@@ -1,6 +1,6 @@
 ---
 title: "Runestone Carvers of 11th Century Sweden"
-author: "Group 1;SIDs: 480222202,520456398,520464588,520455519,520174676, 510476517"
+author: "Group 1;SIDs: 480222202 , 520456398 , 520464588 , 520455519 , 520174676 , 510476517"
 subtitle: "Project 2"
 date: "University of Sydney | DATA1901 | April 2022"
 output:
@@ -19,7 +19,7 @@ output:
 
 # Executive Summary {.unnumbered}
 
-Enter executive summary here
+Our investigation aimed to look at the five runestone carvers in 11th century Sweden with the most runestones signed by them. We compared their styles, dating as well as their locations in order to make inferences about their defining characteristics as individual carvers.
 
 <br>
 
@@ -29,9 +29,30 @@ Enter executive summary here
 
 ## Initial Data Analysis (IDA) {.unnumbered}
 
+<br>
 
-Insert IDA here
+### Sources {-}
 
+Combined the ‘Arch Master’ and ‘Arch Crosses Spreadsheets’ into a single ‘merged’ data frame.
+<br>
+
+### Structure {-}
+
+In cleaning the data, we created new columns from which we produced our graphs. Of note are the character columns ‘Signed’ and ‘Clean_styles’ which contain who solely signed the runestone and the style of it respectively. We also converted the coordinate data to WGS1984 latitude and longitude columns, treating that data as numeric.
+
+### Limitations {-}
+
+As not all runestones were signed, we could not confidently assume that the data collected wholly represents its carvers’ characteristics. Due to the nature of the runestones being subject to the passage of time, many have become unidentifiable.
+<br>
+
+### Assumptions {-}
+
+In analysing the stylistic choices, we assumed that the carvers themselves were the primary factor that influenced how they engraved runestones. However, this data may be skewed by other factors such as who commissioned the carving, and the socio-religious purposes of a given runestone.
+<br>
+
+### Data Cleaning {-}
+
+We removed entries that did not have complete coordinate data and which did not have a single signature. This narrowed our dataset to around 100 entries which was consistent with our research interest to centre mainly on the characteristics of the top carvers only.
 <br>
 
 ```{r Required Packages, eval=FALSE, include=FALSE}
@@ -61,7 +82,7 @@ library(png)
 library(grid)
 ```
 
-```{r Wrangling and Cleaning}
+```{r Wrangling and Cleaning, message=FALSE, warning=FALSE}
 
 #Merging Master and Cross Data
 master_data <- read_excel("Arch_master_spreadsheet-2.xls")
@@ -145,12 +166,9 @@ top_5_df <- merged[merged$Signed %in% unique_sig, ]
 
 ## Research Questions {.unnumbered}
 
-
-Of primary interest were the runestones carvers, with our research questions centred around the frequency, dating , style, and location in relation to these carvers. We chose to narrow down our analysis to the five carvers who had the most runestones 'signed' rather than 'attributed to' to be more certain of our inferences on these carvers.
-
 <br>
 
-### Question 1: Who had the most signed runestones and how does this interact with Gräslund's (2006) dating system? {.unnumbered}
+### Question 1: Who had the most signed runestones and how is their age reflected in the dating of their works? {.unnumbered}
 
 ```{r Figure1 Code}
 # creating dating annotation
@@ -213,7 +231,7 @@ Figure1 <- (ggplot(top_5_df,
 Figure1
 ```
 
-blah blah 
+As seen in Figure 1, Öpir had the most runestones signed, totalling 45; more than twice as many as the runner-up, Balle.  Based on the dating system, Öpir likely lived later than the other carvers, considering that he was the only carver with Pr5 style stones. Balle and Fot were likely the most senior given the presence of the earlier styles of Fp and RAK runestones. In general, the later Pr3-Pr5 were the most popular for the signed runestones across these carvers giving credence to the hypothesis that signing runestones may have been a later phenomenon in the scope of the 11th century
 
 <br>
 
@@ -272,11 +290,11 @@ Figure2 <- ggplot(data, aes(y=totals, x= reorder(top_carvers,-totals), fill=type
 Figure2
 ```
 
-blah blah 
+Through examining the proportions in which certain typological cross features (Lager, 2002 cited in Thoeming, 2016) occurred, we aimed to compare the stylistic tendencies of these carvers. As shown in figure 2, the top carvers all tended to use a mix of most crosses, except for the G type cross, which was only predominantly used by Visäte, favouring a more conservative, asymmetric style. The total absence of type G for both Balle and Fot also suggest it may have been a regional style, shown by the clustering of both carvers in figure 3. The type E style was also used proportionally less, which, based on its features, implies it was a more ornamental or ceremonial style. 
 
 <br>
 
-### Question 3: Where were runestones located and how densely packed were they for each carver? {.unnumbered}
+### Question 3: Where were the runestones located and what does their density suggest about the regional preferences of their carvers? {.unnumbered}
 
 ```{r Figure3 Code}
 #TODO fix scales
@@ -306,11 +324,13 @@ scale_colour_discrete_qualitative(l1 = 70) +
 Figure3
 ```
 
-blah blah <br>
+As shown in Figure 3, we constructed a scatterplot using the WGS1984 latitude and longitude coordinate data for each runestone. Layered on top is a density approximation to give a better visual idea of how close together each carver’s runestones were. The majority of runestones of Visate and Balle were found in relatively close proximity to one another, while the runestones of Fot, Öpir and Asmund were more spread out. Interesting to note are the outliers of Asmund located far north in comparison to his other works which shows how certain carvers moved around, creating carvings in many different places, while some chose to stay within a close proximity.
+
+<br>
 
 ## Related Articles {.unnumbered}
 
-blah blah
+Our findings are predicated on the accuracy of Gräslund (2006) for dating these carvers in Question 1 (Figure 1). We also relied on Lager (2002) depiction of the physical features of the various cross typologies to make conclusions about the carvers stylistics choices in Figure 2.
 
 <br>
 
@@ -330,24 +350,24 @@ We met every thursday of Semester 1 2022 Weeks 2-8 on Zoom from 1pm-2pm.
 <br>
 
 ### Specific Contributions {-}
-Damon:
+Damon: Data cleaning
 
 
-Eben:
+Eben: Figure 2 and figure density overlay, general coding
 
 
-Ilana:
+Ilana: Video shooting and editing
 
 
-Michael:
+Michael: Report writing
 
 
-Vince:
+Vince: Plotting and plot aesthetics, added tables and picture annotations to graphs
 
 
-Kevin:
+Kevin: Report Editing 
 
 <br>
 
 ### General Contributions {-}
-All members helped refine and discuss the general ideas around our research report.
+All members helped refine and discuss the general ideas around our research report via a shared google document and zoom discussions.
